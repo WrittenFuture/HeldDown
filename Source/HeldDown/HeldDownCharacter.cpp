@@ -1,0 +1,249 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "HeldDownCharacter.h"
+#include "HeldDownProjectile.h"
+#include "Animation/AnimInstance.h"
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
+#include "Engine/LocalPlayer.h"
+#include "Blueprint/UserWidget.h"
+
+DEFINE_LOG_CATEGORY(LogTemplateCharacter);
+
+//////////////////////////////////////////////////////////////////////////
+// AHeldDownCharacter
+
+AHeldDownCharacter::AHeldDownCharacter()
+{
+	// Set size for collision capsule
+	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+		
+	// Create a CameraComponent	
+	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
+	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
+	FirstPersonCameraComponent->bUsePawnControlRotation = true;
+
+	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
+	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
+	Mesh1P->SetOnlyOwnerSee(true);
+	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
+	Mesh1P->bCastDynamicShadow = false;
+	Mesh1P->CastShadow = false;
+	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
+
+}
+
+//////////////////////////////////////////////////////////////////////////// Input
+
+void AHeldDownCharacter::NotifyControllerChanged()
+{
+	Super::NotifyControllerChanged();
+
+	// Add Input Mapping Context
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
+void AHeldDownCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{	
+	// Set up action bindings
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		// Jumping
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		// Moving
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AHeldDownCharacter::Move);
+
+		// Looking
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AHeldDownCharacter::Look);
+
+		// Action button pressed
+		EnhancedInputComponent->BindAction(ActionButton, ETriggerEvent::Started, this, &AHeldDownCharacter::ActionButtonPressed);
+		EnhancedInputComponent->BindAction(ActionButton, ETriggerEvent::Completed, this, &AHeldDownCharacter::ActionButtonReleased);
+
+		EnhancedInputComponent->BindAction(OpenMainMenuAction, ETriggerEvent::Triggered, this, &AHeldDownCharacter::OpenMainMenu);
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+}
+
+
+void AHeldDownCharacter::Move(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	FVector2D MovementVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
+	{
+		// add movement 
+		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
+		AddMovementInput(GetActorRightVector(), MovementVector.X);
+	}
+}
+
+void AHeldDownCharacter::Look(const FInputActionValue& Value)
+{
+	if (CanLook)
+	{
+		// input is a Vector2D
+		FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+		if (Controller != nullptr)
+		{
+			// add yaw and pitch input to controller
+			AddControllerYawInput(LookAxisVector.X);
+			AddControllerPitchInput(LookAxisVector.Y);
+		}
+	}
+}
+
+void AHeldDownCharacter::ActionButtonPressed(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	IsActionButtonPressed = true;
+	float ViewDistance = 1000.0f;
+	AactorViewed = AHeldDownCharacter::ItemViewed(ViewDistance);
+
+	
+
+	if (AactorViewed)
+	{
+		UFunction* RecivingFunc = AactorViewed->FindFunction(FName("ActionButtonPressedOnThis"));
+		UE_LOG(LogTemplateCharacter, Log, TEXT("ActionButtonPressed on %s"), *AactorViewed->GetName());
+
+		if (RecivingFunc)
+		{
+			AactorViewed->ProcessEvent(AactorViewed->FindFunction(FName("ActionButtonPressedOnThis")), nullptr);
+		}
+		
+	}
+	
+}
+
+void AHeldDownCharacter::ActionButtonReleased(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	IsActionButtonPressed = false;
+	AactorViewed = nullptr;
+}
+
+void AHeldDownCharacter::GetActionButtonInfo(AActor*& ItemViewed, bool& IsPressed)
+{
+	ItemViewed = AactorViewed;
+	IsPressed = IsActionButtonPressed;
+}
+
+AActor* AHeldDownCharacter::ItemViewed(float ViewDistance)
+{
+	FVector Start = FVector::ZeroVector;
+    FRotator Rotation = FRotator::ZeroRotator;
+
+    // Get the player's viewpoint
+    GetController()->GetPlayerViewPoint(Start, Rotation);
+
+    FVector End = Start + (Rotation.Vector() * ViewDistance);
+
+    FHitResult HitItem;
+    FCollisionQueryParams TraceParams(FName(TEXT("LookTrace")), true, this);
+    TraceParams.bReturnPhysicalMaterial = false;
+    TraceParams.AddIgnoredActor(this);
+
+    // Perform line trace (raycast)
+    if (GetWorld()->LineTraceSingleByChannel(HitItem, Start, End, ECC_Visibility, TraceParams))
+    {
+        return HitItem.GetActor();
+    }
+
+    return nullptr;
+}
+
+
+
+float AHeldDownCharacter::GetHealth()
+{
+	return Health;
+}
+
+float AHeldDownCharacter::GetHunger()
+{
+	return Hunger;
+}
+
+void AHeldDownCharacter::SetHealth(float NewHealth)
+{
+	if (NewHealth < 0)
+	{
+		NewHealth = 0;
+		return;
+	}
+	else if (NewHealth > 100)
+	{
+		NewHealth = 100;
+		return;
+	}else{
+		Health = NewHealth;
+	}
+	
+}
+
+void AHeldDownCharacter::SetHunger(float NewHunger)
+{
+	if (NewHunger < 0)
+	{
+		NewHunger = 0;
+		return;
+	}
+	else if (NewHunger > 100)
+	{
+		NewHunger = 100;
+		return;
+	}
+	else
+	{
+		Hunger = NewHunger;
+	}
+}
+
+void AHeldDownCharacter::SetShouldDisplayStatUI(bool NewShouldDisplayStats)
+{
+	ShouldDisplayStatUI = NewShouldDisplayStats;
+}
+
+bool AHeldDownCharacter::GetShouldDisplayStatUI()
+{
+	return ShouldDisplayStatUI;
+}
+
+void AHeldDownCharacter::SetCanLook(bool NewCanLook)
+{
+	CanLook = NewCanLook;
+}
+
+bool AHeldDownCharacter::GetCanLook()
+{
+	return CanLook;
+}
+
+void AHeldDownCharacter::OpenMainMenu()
+{
+	UE_LOG(LogTemplateCharacter, Log, TEXT("OpenMainMenu called"));
+
+	ShouldDisplayStatUI = true;
+	
+}
+
+
