@@ -10,6 +10,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "Inventory.h"
 #include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -35,6 +36,8 @@ AHeldDownCharacter::AHeldDownCharacter()
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
+
+	PlayerInventory = CreateDefaultSubobject<AInventory>(TEXT("PlayerInventory"));
 
 }
 
@@ -246,4 +249,7 @@ void AHeldDownCharacter::OpenMainMenu()
 	
 }
 
-
+AInventory* AHeldDownCharacter::GetPlayerInventory()
+{
+	return PlayerInventory;
+}

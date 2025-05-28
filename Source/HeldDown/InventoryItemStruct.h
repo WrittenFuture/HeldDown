@@ -1,15 +1,22 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InventoryItemStruct.generated.h"
 
-/**
- * 
- */
-class HELDDOWN_API InventoryItemStruct
+USTRUCT(BlueprintType)
+struct FInventoryItemStruct
 {
-public:
-	InventoryItemStruct();
-	~InventoryItemStruct();
+    GENERATED_BODY()
+
+    // Properties
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Name;
+
+    // Default constructor (needed!)
+    FInventoryItemStruct()
+        : Name(TEXT("Default")) {}
+
+    // Optional: Parametrized constructor if you want it
+    FInventoryItemStruct(FString InName, int32 InQuantity)
+        : Name(InName) {}
 };

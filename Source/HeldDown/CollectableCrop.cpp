@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "Inventory.h"
 #include "CollectableCrop.h"
 
 // Sets default values
@@ -21,6 +21,9 @@ void ACollectableCrop::BeginPlay()
 
 	MaxCropAmount = GreatGrandChildren.Num(); // Set maxCropAmount to the number of great-grandchildren
 	AmountOnCrop = MaxCropAmount; // Initialize AmountOnCrop to maxCropAmount
+
+	PlayerCharacter = Cast<AHeldDownCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	PlayerInventory = PlayerCharacter->GetPlayerInventory();
 	
 }
 
@@ -62,7 +65,9 @@ void ACollectableCrop::CollectCrop()
 
 	AmountOnCrop--;
 
-	
+	PlayerInventory->AddListToInventoryDatabase(ItemsCollected);
+
+	PlayerInventory->PrintInventory();
 	
 }
 

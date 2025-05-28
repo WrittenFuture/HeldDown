@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Inventory.h"
+#include "HeldDownCharacter.h"
 #include "CollectableCrop.generated.h"
 
 UCLASS()
@@ -28,6 +30,15 @@ protected:
 	TArray<USceneComponent*> empty;
 	TArray<USceneComponent*> DirectChildComponents;
 	TArray<USceneComponent*> GreatGrandChildren;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player")
+	AHeldDownCharacter* PlayerCharacter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory")
+	AInventory* PlayerInventory;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TArray<FInventoryItemStruct> ItemsCollected;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

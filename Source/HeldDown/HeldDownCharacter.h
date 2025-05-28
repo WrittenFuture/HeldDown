@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Inventory.h"
 #include "HeldDownCharacter.generated.h"
 
 class UInputComponent;
@@ -114,6 +115,9 @@ protected:
 	UFUNCTION( Category = "MyEvents")
 	void OpenMainMenu();
 
+	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
+	AInventory* PlayerInventory;
+
 
 public:
 	/** Returns Mesh1P subobject **/
@@ -137,6 +141,12 @@ public:
 	void SetCanLook(bool NewCanLook);
 	UFUNCTION(BlueprintCallable, Category = "Player Stats")
 	bool GetCanLook();
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	AInventory* GetPlayerInventory();
+
+
+	
 
 	
 
