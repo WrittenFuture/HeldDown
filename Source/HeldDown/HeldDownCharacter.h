@@ -13,6 +13,7 @@ class USkeletalMeshComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UInventoryWidgetManeger;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -51,6 +52,9 @@ class AHeldDownCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* OpenMainMenuAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* OpenInventoryAction;
 	
 public:
 	AHeldDownCharacter();
@@ -67,12 +71,21 @@ protected:
 	bool ShouldDisplayStatUI = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	bool CanLook = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	bool ShouldOpenInventory = false;
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input)
 	AActor* AactorViewed = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input)
 	bool IsActionButtonPressed = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
+	TSubclassOf<UInventoryWidgetManeger> InventoryWidgetManegerClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = Inventory)
+	UInventoryWidgetManeger* InventoryWidgetInstance;
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -89,15 +102,14 @@ protected:
 	/** get what player is viewing */
 	AActor* ItemViewed(float ViewDistance);
 
-	void DisplayFirstWidget();
-
-
 
 
 protected:
 	// APawn interface
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+
+	virtual void BeginPlay() override;
 	// End of APawn interface
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -117,6 +129,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Inventory")
 	AInventory* PlayerInventory;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void OpenInventory();
 
 
 public:

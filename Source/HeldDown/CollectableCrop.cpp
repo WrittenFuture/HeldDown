@@ -21,9 +21,6 @@ void ACollectableCrop::BeginPlay()
 
 	MaxCropAmount = GreatGrandChildren.Num(); // Set maxCropAmount to the number of great-grandchildren
 	AmountOnCrop = MaxCropAmount; // Initialize AmountOnCrop to maxCropAmount
-
-	PlayerCharacter = Cast<AHeldDownCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	PlayerInventory = PlayerCharacter->GetPlayerInventory();
 	
 }
 
@@ -50,6 +47,19 @@ void ACollectableCrop::ActionButtonPressedOnThis()
 void ACollectableCrop::CollectCrop()
 {
 	UE_LOG(LogTemp, Log, TEXT("Collecting crop..."));
+
+	PlayerCharacter = Cast<AHeldDownCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	PlayerInventory = PlayerCharacter->GetPlayerInventory();
+	if (!PlayerInventory)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerInventory is null!"));
+		return;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("PlayerInventory is valid!"));
+	}
+	
 
 	int CropToCollect = FMath::Abs(AmountOnCrop - MaxCropAmount); // Calculate what crop to collect
 

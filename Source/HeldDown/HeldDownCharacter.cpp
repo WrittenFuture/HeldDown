@@ -11,6 +11,7 @@
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
 #include "Inventory.h"
+#include "InventoryWidgetManeger.h"
 #include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -37,11 +38,18 @@ AHeldDownCharacter::AHeldDownCharacter()
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
-	PlayerInventory = CreateDefaultSubobject<AInventory>(TEXT("PlayerInventory"));
-
 }
 
 //////////////////////////////////////////////////////////////////////////// Input
+
+void AHeldDownCharacter::BeginPlay()
+{
+	// Call the base class  
+	Super::BeginPlay();
+
+	// Initialize the inventory
+	PlayerInventory = GetWorld()->SpawnActor<AInventory>(AInventory::StaticClass());
+}
 
 void AHeldDownCharacter::NotifyControllerChanged()
 {
@@ -76,7 +84,9 @@ void AHeldDownCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EnhancedInputComponent->BindAction(ActionButton, ETriggerEvent::Started, this, &AHeldDownCharacter::ActionButtonPressed);
 		EnhancedInputComponent->BindAction(ActionButton, ETriggerEvent::Completed, this, &AHeldDownCharacter::ActionButtonReleased);
 
-		EnhancedInputComponent->BindAction(OpenMainMenuAction, ETriggerEvent::Triggered, this, &AHeldDownCharacter::OpenMainMenu);
+		EnhancedInputComponent->BindAction(OpenMainMenuAction, ETriggerEvent::Started, this, &AHeldDownCharacter::OpenMainMenu);
+
+		EnhancedInputComponent->BindAction(OpenInventoryAction, ETriggerEvent::Started, this, &AHeldDownCharacter::OpenInventory);
 	}
 	else
 	{
@@ -252,4 +262,47 @@ void AHeldDownCharacter::OpenMainMenu()
 AInventory* AHeldDownCharacter::GetPlayerInventory()
 {
 	return PlayerInventory;
+}
+
+void AHeldDownCharacter::OpenInventory()
+{
+	ShouldOpenInventory = !ShouldOpenInventory;
+
+	if(ShouldOpenInventory)
+	{
+		UE_LOG(LogTemp, Log, TEXT("OpenInventory called"));
+		if (InventoryWidgetManegerClass)
+		{
+			UE_LOG(LogTemp, Log, TEXT("InventoryWidgetManegerClass is valid"));
+
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("InventoryWidgetManegerClass is not valid"));
+			return;
+		}
+
+		InventoryWidgetInstance = CreateWidget<UInventoryWidgetManeger>(GetWorld(),InventoryWidgetManegerClass);
+		if (!InventoryWidgetInstance)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create InventoryWidgetManeger instance"));
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("InventoryWidgetManeger instance created successfully"));
+		}
+
+		InventoryWidgetInstance->BeginPlay();
+		InventoryWidgetInstance->SetPlayerInventory();
+		InventoryWidgetInstance->UpdateInventoryUI();
+		InventoryWidgetInstance->AddToViewport();
+	}
+	else
+	{
+		if (InventoryWidgetInstance)
+		{
+			InventoryWidgetInstance->RemoveFromParent();
+		}
+	}
 }

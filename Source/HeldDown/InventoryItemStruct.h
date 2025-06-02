@@ -12,11 +12,14 @@ struct FInventoryItemStruct
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString Name;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UTexture2D* Icon;
+
     // Default constructor (needed!)
     FInventoryItemStruct()
-        : Name(TEXT("Default")) {}
+        : Name(TEXT("Default")), Icon() {}
 
     // Optional: Parametrized constructor if you want it
-    FInventoryItemStruct(FString InName, int32 InQuantity)
-        : Name(InName) {}
+    FInventoryItemStruct(FString InName, UTexture2D* InIcon)
+        : Name(InName), Icon(InIcon) {}
 };
