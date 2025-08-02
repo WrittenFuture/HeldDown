@@ -33,7 +33,8 @@ void ACollectableCrop::Tick(float DeltaTime)
 	if (CropReplenishTimer <= 0)
 	{
 		ReplenishCrop();
-		CropReplenishTimer = 1000; // Reset the timer
+		CropReplenishTimer = 100; // Reset the timer to 5 seconds
+		//CropReplenishTimer = 600000; // Reset the timer
 	}
 
 }
@@ -48,8 +49,30 @@ void ACollectableCrop::CollectCrop()
 {
 	UE_LOG(LogTemp, Log, TEXT("Collecting crop..."));
 
-	PlayerCharacter = Cast<AHeldDownCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
-	PlayerInventory = PlayerCharacter->GetPlayerInventory();
+	PlayerCharacter = Cast<AHeldDownCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn()); //get inventory
+	PlayerInventory = PlayerCharacter->GetPlayerInventory(); 
+
+	if (PlayerInventory)
+	{
+		int InventorySpace = PlayerInventory->GetInventorySpace();
+
+		if (InventorySpace <= 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No inventory space left! Cannot collect crop."));
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("Inventory space available: %d"), InventorySpace);
+		}
+	}
+	else 
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerInventory is null! Cannot get inventory space."));
+		return;
+	}
+
+	//fail safe
 	if (!PlayerInventory)
 	{
 		UE_LOG(LogTemp, Error, TEXT("PlayerInventory is null!"));
@@ -84,6 +107,27 @@ void ACollectableCrop::CollectCrop()
 void ACollectableCrop::ReplenishCrop()
 {
 	UE_LOG(LogTemp, Log, TEXT("Replenishing crop..."));
+
+	// unhide all previously hidden components
+
+	// play animation or sound here if needed
+
+	for (USceneComponent* Child : GreatGrandChildren)
+	{
+		if (!Child->IsVisible())
+		{
+			Child->SetVisibility(true, true); // true = visible, true = apply to children
+			Child->SetHiddenInGame(false, true); // unhides in game and optionally in editor
+			UE_LOG(LogTemp, Log, TEXT("Replenished %s "), *Child->GetName());
+			AmountOnCrop++;
+		} 
+		else 
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Component %s is already visible!"), *Child->GetName());
+		}
+	}
+
+	
 
 }
 

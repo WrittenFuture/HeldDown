@@ -23,6 +23,7 @@ void AInventory::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("AInventory::BeginPlay after InventoryDatabase.Empty() called"));
 	PrintInventory(); // Print the inventory to the log for debugging
 	
+	InventorySize = 6; // Set default inventory size
 }
 
 // Called every frame
@@ -74,5 +75,37 @@ void AInventory::PrintInventory()
 		UE_LOG(LogTemp, Log, TEXT("Item %d:"), itteration++);
 		UE_LOG(LogTemp, Log, TEXT("Item Name: %s"), *Item.Name);
 	}
+}
+
+void AInventory::RemoveFromInventoryDatabaseByInt(int index)
+{
+	if (InventoryDatabase.IsValidIndex(index))
+	{
+		InventoryDatabase.RemoveAt(index);
+		UE_LOG(LogTemp, Log, TEXT("Removed item at index %d"), index);
+
+		for (int i = index; i < InventoryDatabase.Num(); i++)
+		{
+			if (!InventoryDatabase.IsValidIndex(i + 1))
+			{
+				break; // Prevent out-of-bounds access
+			}
+			InventoryDatabase[i] = InventoryDatabase[i + 1]; // Update the index of the remaining items
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid index %d for removal"), index);
+	}
+}
+
+
+int AInventory::GetInventorySpace()
+{
+    int UsedSlots = InventoryDatabase.Num();
+    int SpaceLeft = InventorySize - UsedSlots;
+
+    UE_LOG(LogTemp, Log, TEXT("Current inventory space: %d"), SpaceLeft);
+    return SpaceLeft;
 }
 

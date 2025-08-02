@@ -14,6 +14,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UInventoryWidgetManeger;
+class UUserWidget;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -70,9 +71,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	bool ShouldDisplayStatUI = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
+	bool ShouldOpenMainMenue = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	bool CanLook = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	bool ShouldOpenInventory = false;
+
+	APlayerController* PlayerController;
 	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input)
@@ -86,6 +91,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = Inventory)
 	UInventoryWidgetManeger* InventoryWidgetInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = MainMenu)
+	TSubclassOf<UUserWidget> MainMenueParentClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = MainMenu)
+	UUserWidget* MainMenueInstance;
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);

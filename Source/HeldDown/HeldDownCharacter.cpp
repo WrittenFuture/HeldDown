@@ -12,6 +12,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Inventory.h"
 #include "InventoryWidgetManeger.h"
+#include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -49,6 +50,7 @@ void AHeldDownCharacter::BeginPlay()
 
 	// Initialize the inventory
 	PlayerInventory = GetWorld()->SpawnActor<AInventory>(AInventory::StaticClass());
+	PlayerController = Cast<APlayerController>(GetController());
 }
 
 void AHeldDownCharacter::NotifyControllerChanged()
@@ -56,9 +58,9 @@ void AHeldDownCharacter::NotifyControllerChanged()
 	Super::NotifyControllerChanged();
 
 	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (APlayerController* PlayerControllerForMapping = Cast<APlayerController>(Controller))
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerForMapping->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
@@ -184,8 +186,6 @@ AActor* AHeldDownCharacter::ItemViewed(float ViewDistance)
     return nullptr;
 }
 
-
-
 float AHeldDownCharacter::GetHealth()
 {
 	return Health;
@@ -254,8 +254,72 @@ bool AHeldDownCharacter::GetCanLook()
 void AHeldDownCharacter::OpenMainMenu()
 {
 	UE_LOG(LogTemplateCharacter, Log, TEXT("OpenMainMenu called"));
+	ShouldOpenMainMenue = !ShouldOpenMainMenue;
+	if (ShouldOpenMainMenue)
+	{
+		UE_LOG(LogTemplateCharacter, Log, TEXT("Open Main Menu"));
+		if (MainMenueParentClass)
+		{
+			UE_LOG(LogTemplateCharacter, Log, TEXT("MainMenueParentClass is valid"));
+			MainMenueInstance = CreateWidget<UUserWidget>(GetWorld(), MainMenueParentClass);
+		}
+		else
+		{
+			UE_LOG(LogTemplateCharacter, Error, TEXT("MainMenueParentClass is not valid"));
+			return;
+		}
 
-	ShouldDisplayStatUI = true;
+		
+
+		if (MainMenueInstance)
+		{
+			UE_LOG(LogTemplateCharacter, Log, TEXT("MainMenueInstance is valid"));
+			MainMenueInstance->AddToViewport();
+			CanLook = false; // Disable looking when the main menu is open
+
+			if (PlayerController)
+			{
+				PlayerController->bShowMouseCursor = true;
+        		PlayerController->bEnableClickEvents = true;
+        		PlayerController->bEnableMouseOverEvents = true;
+
+			}
+			else
+			{
+				UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to get PlayerController"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to create MainMenueInstance"));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemplateCharacter, Log, TEXT("Close Main Menu"));
+		if (MainMenueInstance)
+		{
+			MainMenueInstance->RemoveFromParent();
+			MainMenueInstance = nullptr;
+
+			if (PlayerController)
+			{
+				PlayerController->bShowMouseCursor = false;
+				PlayerController->bEnableClickEvents = false;
+				PlayerController->bEnableMouseOverEvents = false;
+			}
+			else
+			{
+				UE_LOG(LogTemplateCharacter, Error, TEXT("Failed to get PlayerController"));
+			}
+			CanLook = true; // Re-enable looking when the main menu is closed
+		}
+		else
+		{
+			UE_LOG(LogTemplateCharacter, Warning, TEXT("MainMenueInstance is already null"));
+		}
+	}
 	
 }
 

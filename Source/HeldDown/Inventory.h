@@ -23,6 +23,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	TArray<FInventoryItemStruct> InventoryDatabase;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	int InventorySize; // Default inventory size
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -39,6 +42,11 @@ public:
 	void AddListToInventoryDatabase(TArray<FInventoryItemStruct> ListOfNewItem);
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	TArray<FInventoryItemStruct> SwapItemInInventoryDatabase(int index1, int index2);
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void RemoveFromInventoryDatabaseByInt(int index);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	int GetInventorySpace();
 
 	UFUNCTION(BlueprintCallable, Category = "Debug")
 	void PrintInventory();
