@@ -33,8 +33,8 @@ void ACollectableCrop::Tick(float DeltaTime)
 	if (CropReplenishTimer <= 0)
 	{
 		ReplenishCrop();
-		CropReplenishTimer = 100; // Reset the timer to 5 seconds
-		//CropReplenishTimer = 600000; // Reset the timer
+		//CropReplenishTimer = 100; // Reset the timer to 5 seconds
+		CropReplenishTimer = 600000; // Reset the timer
 	}
 
 }

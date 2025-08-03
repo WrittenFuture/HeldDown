@@ -14,6 +14,9 @@
 #include "InventoryWidgetManeger.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/Character.h"
+#include "TimerManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -38,6 +41,9 @@ AHeldDownCharacter::AHeldDownCharacter()
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
+
+	IsSprinting = false;
+
 
 }
 
@@ -76,6 +82,9 @@ void AHeldDownCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AHeldDownCharacter::AcellerateToSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AHeldDownCharacter::DecellerateToSprint);
+
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AHeldDownCharacter::Move);
 
@@ -96,6 +105,63 @@ void AHeldDownCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	}
 }
 
+//TODO: add a limit to sprint length
+
+void AHeldDownCharacter::AcellerateToSprint(const FInputActionValue& Value)
+{
+
+	UE_LOG(LogTemplateCharacter, Log, TEXT("AcellerateToSprint called"));
+	GetWorldTimerManager().ClearTimer(DecelerateTimer);
+    GetWorldTimerManager().ClearTimer(AccelerateTimer);
+	
+	GetWorldTimerManager().SetTimer(
+        AccelerateTimer,
+        this,
+        &AHeldDownCharacter::AcellerateFrame,
+        0.01f,  // approx. per-frame
+        true
+    );
+}
+
+void AHeldDownCharacter::AcellerateFrame()
+{
+	UE_LOG(LogTemplateCharacter, Log, TEXT("AcellerateFrame called"));
+	PlayerPerferredSpeed = FMath::Min(PlayerPerferredSpeed + AccelerationRate, PlayerSprintSpeed);
+	GetCharacterMovement()->MaxWalkSpeed = PlayerPerferredSpeed;
+
+	if (PlayerPerferredSpeed >= PlayerSprintSpeed)
+    {
+        GetWorldTimerManager().ClearTimer(AccelerateTimer);
+    }
+}
+
+void AHeldDownCharacter::DecellerateToSprint(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemplateCharacter, Log, TEXT("DecellerateToSprint called"));
+	GetWorldTimerManager().ClearTimer(DecelerateTimer);
+    GetWorldTimerManager().ClearTimer(AccelerateTimer);
+	
+	GetWorldTimerManager().SetTimer(
+        DecelerateTimer,
+        this,
+        &AHeldDownCharacter::DecellerateFrame,
+        0.01f,  // approx. per-frame
+        true
+    );
+
+}
+
+void AHeldDownCharacter::DecellerateFrame()
+{
+	UE_LOG(LogTemplateCharacter, Log, TEXT("DecellerateFrame called"));
+	PlayerPerferredSpeed = FMath::Max(PlayerPerferredSpeed - DecelerationRate, PlayerWalkSpeed);
+	GetCharacterMovement()->MaxWalkSpeed = PlayerPerferredSpeed;
+
+	if (PlayerPerferredSpeed <= PlayerWalkSpeed)
+	{
+		GetWorldTimerManager().ClearTimer(DecelerateTimer);
+	}
+}
 
 void AHeldDownCharacter::Move(const FInputActionValue& Value)
 {
@@ -112,7 +178,11 @@ void AHeldDownCharacter::Move(const FInputActionValue& Value)
 
 void AHeldDownCharacter::Look(const FInputActionValue& Value)
 {
-	if (CanLook)
+
+	//UE_LOG(LogTemplateCharacter, Log, TEXT("PlayerPerferredSpeed: %f"), PlayerPerferredSpeed);
+
+	//UE_LOG(LogTemp, Log, CanLook);
+	if (true)//CanLook) TODO: fix CanLook
 	{
 		// input is a Vector2D
 		FVector2D LookAxisVector = Value.Get<FVector2D>();

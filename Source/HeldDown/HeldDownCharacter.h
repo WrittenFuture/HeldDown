@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "Inventory.h"
+#include "TimerManager.h"
 #include "HeldDownCharacter.generated.h"
 
 class UInputComponent;
@@ -40,6 +41,9 @@ class AHeldDownCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	UInputAction* SprintAction;
+
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
@@ -68,6 +72,24 @@ protected:
 	float Health = 100.0f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	float Hunger = 100.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	float PlayerWalkSpeed = 400.0f;
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	float PlayerSprintSpeed = 900.0f;
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	float PlayerPerferredSpeed = 400.0f; // speed to set the player to
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	float AccelerationRate = 10.0f;
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	float DecelerationRate = 10.0f;
+	UPROPERTY(BlueprintReadOnly, Category = Sprint)
+	bool CanSprint = true;
+
+	FTimerHandle AccelerateTimer;
+	FTimerHandle DecelerateTimer;
+	FTimerHandle MaxSpeedTimer;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
 	bool ShouldDisplayStatUI = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Player Stats")
@@ -98,11 +120,25 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = MainMenu)
 	UUserWidget* MainMenueInstance;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Input)
+	bool IsSprinting;
+
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	/** Called for Sprintig input */
+	void AcellerateToSprint(const FInputActionValue& Value);
+
+	void AcellerateFrame();
+
+	void DecellerateToSprint(const FInputActionValue& Value);
+
+	void DecellerateFrame();
+
+	void MaxSprint();
 
 	/** Called when action button is pressed */
 	void ActionButtonPressed(const FInputActionValue& Value);

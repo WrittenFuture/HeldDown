@@ -7,6 +7,7 @@
 #include "HeldDownCharacter.h"
 #include "Inventory.h"
 #include "InventoryItemStruct.h"
+#include "TimerManager.h"
 #include "CropBed.generated.h"
 
 UCLASS()
@@ -47,11 +48,28 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
 	int InventoryIndexOfPlantableItem;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	float CropGrowthTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TArray<UStaticMesh*> MeshsForGrowthStages;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	TArray<FInventoryItemStruct> GrownItems;
+
 	UFUNCTION(BlueprintCallable)
 	int SelectPlantableItem();
 
 	UFUNCTION(BlueprintCallable)
+	void ProgressCrop();
+
+	UFUNCTION(BlueprintCallable)
 	void PlantCrop(int ItemInList);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
+	int CropGrowthStage;
+
+	FTimerHandle CropGrowthTimer;
 
 public:	
 	// Called every frame
