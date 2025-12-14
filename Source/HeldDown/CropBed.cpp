@@ -147,6 +147,12 @@ void ACropBed::PlantCrop(int ItemInList)
 	);
 }
 
+
+// TODO: Both ProressCrop and HarvestCrop delete previous mesh based on name, this stops working after the first harvest
+// either the name needs to be reset to StaticMeshComponent_0 wich i believe is managed by the engine 
+//or we need to find a better way to handle this
+
+
 void ACropBed::ProgressCrop()
 {
 	CropGrowthStage++;
@@ -160,7 +166,9 @@ void ACropBed::ProgressCrop()
 	if (CropGrowthStage >= MeshsForGrowthStages.Num())
 	{
 
-		// TODO: allow crop to be harvested when this happens
+		//allow crop to be harvested when this happens
+		ReadyToHarvest = true;
+
 		UE_LOG(LogTemp, Log, TEXT("Crop has reached the maximum growth stage. No more growth stages available."));
 		GetWorldTimerManager().ClearTimer(CropGrowthTimer); // Stop the timer
 		return;												// Stop if we exceed the number of growth stages
@@ -180,15 +188,18 @@ void ACropBed::ProgressCrop()
 
 			for (UStaticMeshComponent *MeshComp : MeshComponents)
 			{
+				if (MeshComp)
+				{
+					UE_LOG(LogTemp, Log, TEXT("MeshComp: %s"), *MeshComp->GetName());
+				}
 				if (MeshComp && MeshComp->GetName() == PrevMeshName)
 				{
 					MeshComp->DestroyComponent();
         			UE_LOG(LogTemp, Log, TEXT("Destroyed mesh component: %s"), *PrevMeshName);
-        			break; // Remove this line if you expect multiple with the same name
+        			break; 
 				}
 			}
 
-			// TODO: make previous mesh invisible and destroy it
 			NewCropMesh->SetStaticMesh(Mesh);
 			NewCropMesh->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 			NewCropMesh->RegisterComponent();
@@ -217,6 +228,54 @@ int ACropBed::SelectPlantableItem()
 	return 0; // This should be replaced with actual selection logic
 }
 
+void ACropBed::HarvestCrop()
+{
+	UE_LOG(LogTemp, Log, TEXT("Harvesting crop..."));
+
+	UStaticMeshComponent *MeshRoot = Cast<UStaticMeshComponent>(GetRootComponent());
+	UStaticMesh *Mesh = MeshsForGrowthStages[0];
+	USceneComponent *Root = GetRootComponent();
+	FString PrevMeshName = FString::Printf(TEXT("StaticMeshComponent_%d"), CropGrowthStage - 1);
+
+	if (Mesh)
+	{
+		UStaticMeshComponent *NewCropMesh = NewObject<UStaticMeshComponent>(this);
+		if (Root)
+		{
+
+			TArray<UStaticMeshComponent *> MeshComponents;
+			GetComponents<UStaticMeshComponent>(MeshComponents);
+
+			for (UStaticMeshComponent *MeshComp : MeshComponents)
+			{
+				if (MeshComp && MeshComp->GetName() == PrevMeshName)
+				{
+					MeshComp->DestroyComponent();
+        			UE_LOG(LogTemp, Log, TEXT("Destroyed mesh component: %s"), *PrevMeshName);
+        			break; // Remove this line if you expect multiple with the same name
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("MeshRoot is null!"));
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Mesh is null!"));
+		return;
+	}
+
+	CropGrowthStage = 0; // Reset the growth stage after harvesting
+	ReadyToHarvest = false; // Reset the harvest state
+
+	// TODO: Add logic to give the player the harvested item
+
+
+}
+
 void ACropBed::ActionButtonPressedOnThis()
 {
 	UE_LOG(LogTemp, Log, TEXT("Action button pressed on CollectableCrop"));
@@ -224,4 +283,10 @@ void ACropBed::ActionButtonPressedOnThis()
 	GetPlantableItemsInInventory();
 	PlantCrop(SelectPlantableItem());
 	PlantableItemsInInventory.Empty(); // Clear the list after planting
+
+	// if crop is ready to be harvested, we can call a function to collect it
+	if(ReadyToHarvest)
+	{
+		HarvestCrop();
+	}
 }

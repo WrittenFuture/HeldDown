@@ -71,6 +71,12 @@ protected:
 
 	FTimerHandle CropGrowthTimer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
+	bool ReadyToHarvest;
+
+	UFUNCTION(BlueprintCallable)
+	void HarvestCrop();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

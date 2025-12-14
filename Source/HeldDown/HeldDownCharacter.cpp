@@ -44,6 +44,13 @@ AHeldDownCharacter::AHeldDownCharacter()
 
 	IsSprinting = false;
 
+	CostomJumpVelocity = 600.0f;
+	CostomGravityScale = 1.5f;
+	CostomAirControl = 0.8f;
+
+	GetCharacterMovement()->GravityScale = CostomGravityScale;
+    GetCharacterMovement()->JumpZVelocity = CostomJumpVelocity;
+    GetCharacterMovement()->AirControl = CostomAirControl;
 
 }
 

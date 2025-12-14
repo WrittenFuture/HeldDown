@@ -149,6 +149,15 @@ protected:
 	/** get what player is viewing */
 	AActor* ItemViewed(float ViewDistance);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
+	float CostomJumpVelocity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Jump)
+	float CostomGravityScale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Inventory)
+	float CostomAirControl;
+
 
 
 protected:
